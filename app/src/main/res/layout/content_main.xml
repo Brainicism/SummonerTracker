@@ -27,7 +27,7 @@
         android:layout_below="@+id/textView" />
 
     <Button
-        android:id="@+id/stop_Service"
+        android:id="@+id/stop_service"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_below="@+id/start_service"
@@ -39,7 +39,7 @@
         android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@+id/stop_Service"
+        android:layout_below="@+id/stop_service"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="50dp"
         android:paddingTop="10dp">

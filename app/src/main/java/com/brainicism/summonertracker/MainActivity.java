@@ -70,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        findViewById(R.id.stop_Service).setOnClickListener(new View.OnClickListener() {
+        findViewById(R.id.stop_service).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 cancelAlarm();
@@ -82,8 +82,8 @@ public class MainActivity extends AppCompatActivity {
         nameOne = (TextView) findViewById(R.id.summonerBox1);
         nameTwo = (TextView) findViewById(R.id.summonerBox2);
         nameThree = (TextView) findViewById(R.id.summonerBox3);
-        nameOne.setText("hayoung");
-        nameTwo.setText("expense");
+        nameOne.setText("terminator6736");
+        nameTwo.setText("sebi");
         nameThree.setText("clg imaqtpie69");
         updateStatus();
     }

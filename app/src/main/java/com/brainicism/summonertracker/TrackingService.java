@@ -49,7 +49,7 @@ public class TrackingService extends IntentService {
         editor = prefs.edit();
         mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-        wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "My Tag"); //acquire wakelock
+        wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "checkStatus"); //acquire wakelock
         wl.acquire();
         super.onCreate();
     }
@@ -91,28 +91,17 @@ public class TrackingService extends IntentService {
                 Log.i(TAG, summoner.getName() + " is not currently in game " + new Date().toString());
                 int notifID = prefs.getInt(summoner.getName() + "_notifID", 0);
                 long lastRunID = prefs.getLong(summoner.getName() + "_lastRunID", 0);
-                mNotificationManager.cancel(notifID); //cancel notification if game is over
-                Match match;
+                mNotificationManager.cancel(notifID); //cancel current notification if game is over
                 if (lastRunID != 0) { //if they were in a game, but no longer in game
-                    try {
-                        match = RiotAPI.getMatch(lastRunID);
-                    }
-                    catch (APIException e){ //if was custom game
-                        match = null;
-                    }
-                    if (match != null) {
-                        String queueType = MiscMethods.normalizeQueueType(match.getQueueType().toString());
-                        buildNotificationFinishGame(summoner.getName(), lastRunID, queueType);
-                    }
-                    else{
-                        buildNotificationFinishGame(summoner.getName(), lastRunID, "Custom");
-
-                    }
-
+                    String queueType = prefs.getString(summoner.getName() + "_lastRunQueueType", "");
+                    String champ = prefs.getString(summoner.getName() + "_lastRunChamp", "");
+                    buildNotificationFinishGame(summoner.getName(), lastRunID, queueType, champ);
                 }
             }
-            if (game != null) { //updates game ID of previous check
+            if (game != null) { //updates previous current game data
                 editor.putLong(summoner.getName() + "_lastRunID", game.getID());
+                editor.putString(summoner.getName() + "_lastRunQueueType", MiscMethods.normalizeQueueType(game.getQueueType().toString()));
+                editor.putString(summoner.getName() + "_lastRunChamp", participant.getChampion().toString());
                 editor.commit();
             } else {
                 editor.putLong(summoner.getName() + "_lastRunID", 0);
@@ -122,6 +111,7 @@ public class TrackingService extends IntentService {
         wl.release(); //release wakelock
 
     }
+
 
     public void buildNotificationInGame(String summonerName, String champ) { //build notification for currently ingame
         Bitmap bm = BitmapFactory.decodeResource(this.getResources(), R.drawable.icon);
@@ -140,7 +130,7 @@ public class TrackingService extends IntentService {
         mNotificationManager.notify(notifID, mBuilder.build());
     }
 
-    public void buildNotificationFinishGame(String summonerName, long gameID, String queueType) { //build notification for finished game
+    public void buildNotificationFinishGame(String summonerName, long gameID, String queueType, String champ) { //build notification for finished game
         Bitmap bm = BitmapFactory.decodeResource(this.getResources(), R.drawable.icon);
         android.support.v4.app.NotificationCompat.Builder mBuilder =
                 new NotificationCompat.Builder(this)
@@ -149,7 +139,7 @@ public class TrackingService extends IntentService {
                         .setPriority(-1)
                         .setContentTitle("'" + summonerName + "' finished!");
 
-        mBuilder.setContentText(gameID + "(" +queueType +")");
+        mBuilder.setContentText(gameID + "(" + queueType + ") " + champ);
         mBuilder.setVibrate(new long[]{0, 250, 200, 250});
         mBuilder.setLights(Color.RED, 3000, 3000);
         int notifID = (int) System.currentTimeMillis(); //use current time as unique notification ID
@@ -161,7 +151,6 @@ public class TrackingService extends IntentService {
     public static String formatTime(long currTime) { //format seconds to mm:ss
         int minutes = (int) currTime / 60;
         int seconds = ((int) currTime % 60);
-        String str = String.format("%d:%02d", minutes, seconds);
-        return str;
+        return String.format("%d:%02d", minutes, seconds);
     }
 }
