@@ -15,6 +15,9 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.ListView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
@@ -26,8 +29,10 @@ public class MainActivity extends AppCompatActivity {
     public static final String apiKey = "YOUR API KEY HERE";
     private static final String TAG = "MainActivity";
     ArrayList<String> summonerNames = new ArrayList<>();
-    TextView nameOne,nameTwo,nameThree;
+    TextView nameOne, nameTwo, nameThree;
     TextView trackingStatus;
+    ListView trackingList;
+    SummonerAdapter listAdapter;
 
     @Override
     protected void onRestart() {
@@ -66,6 +71,8 @@ public class MainActivity extends AppCompatActivity {
                 scheduleAlarm();
                 Snackbar.make(v, "Tracking Begin", Snackbar.LENGTH_SHORT).show();
                 Log.i(TAG, "Tracking begin");
+                listAdapter = new SummonerAdapter(MainActivity.this, summonerNames);
+                trackingList.setAdapter(listAdapter);
                 updateStatus();
             }
         });
@@ -79,6 +86,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         trackingStatus = (TextView) findViewById(R.id.trackingStatus);
+        trackingList = (ListView) findViewById(R.id.trackingList);
         nameOne = (TextView) findViewById(R.id.summonerBox1);
         nameTwo = (TextView) findViewById(R.id.summonerBox2);
         nameThree = (TextView) findViewById(R.id.summonerBox3);
@@ -140,22 +148,31 @@ public class MainActivity extends AppCompatActivity {
         pIntent.cancel();
     }
 
-    public boolean alarmActive(){
+    public boolean alarmActive() {
         Intent intent = new Intent(getApplicationContext(), AlarmReceiver.class);
-        boolean alarmUp = ((PendingIntent.getBroadcast(this, AlarmReceiver.REQUEST_CODE, intent, PendingIntent.FLAG_NO_CREATE))!= null);
+        boolean alarmUp = ((PendingIntent.getBroadcast(this, AlarmReceiver.REQUEST_CODE, intent, PendingIntent.FLAG_NO_CREATE)) != null);
         Log.i(TAG, String.valueOf(alarmUp));
         return alarmUp;
     }
 
-    public void updateStatus(){
-        if (alarmActive()){
+    public void updateStatus() {
+        if (alarmActive()) {
             trackingStatus.setText("Currently tracking");
             trackingStatus.setTextColor(Color.GREEN);
-        }
-        else{
+        } else {
             trackingStatus.setText("Not tracking");
             trackingStatus.setTextColor(Color.RED);
         }
     }
+
+    private void hideKeyboard() {
+        // Check if no view has focus:
+        View view = this.getCurrentFocus();
+        if (view != null) {
+            InputMethodManager inputManager = (InputMethodManager) this.getSystemService(getBaseContext().INPUT_METHOD_SERVICE);
+            inputManager.hideSoftInputFromWindow(view.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
+        }
+    }
+
 }
 
