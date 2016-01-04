@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -15,10 +16,15 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.ListView;
 import android.widget.TextView;
+
+import com.robrua.orianna.api.core.RiotAPI;
+import com.robrua.orianna.type.api.LoadPolicy;
+import com.robrua.orianna.type.api.RateLimit;
+import com.robrua.orianna.type.core.common.Region;
+import com.robrua.orianna.type.exception.APIException;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -33,6 +39,7 @@ public class MainActivity extends AppCompatActivity {
     TextView trackingStatus;
     ListView trackingList;
     SummonerAdapter listAdapter;
+    String checkedName;
 
     @Override
     protected void onRestart() {
@@ -45,16 +52,28 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        RiotAPI.setLoadPolicy(LoadPolicy.UPFRONT); //set up API
+        RiotAPI.setRateLimit(new RateLimit(3000, 10), new RateLimit(180000, 600));
+        RiotAPI.setAPIKey(MainActivity.apiKey);
+        RiotAPI.setRegion(Region.NA);
         setSupportActionBar(toolbar);
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) { //will replace with adding summoners to track later
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-                alarmActive();
+                checkUser(nameOne.getText().toString(), new OnCheckValidEndListener() {
+                    @Override
+                    public void onCheckValidEnd(String checkedName) {
+                        if (checkedName == null) {
+                            Log.i(TAG, "Null");
+                        } else {
+                            Log.i(TAG, checkedName + " Not Null");
+                        }
+                    }
+                });
             }
         });
+
         findViewById(R.id.start_service).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -74,6 +93,7 @@ public class MainActivity extends AppCompatActivity {
                 listAdapter = new SummonerAdapter(MainActivity.this, summonerNames);
                 trackingList.setAdapter(listAdapter);
                 updateStatus();
+
             }
         });
 
@@ -83,6 +103,7 @@ public class MainActivity extends AppCompatActivity {
                 cancelAlarm();
                 Snackbar.make(v, "Tracking End", Snackbar.LENGTH_SHORT).show();
                 updateStatus();
+
             }
         });
         trackingStatus = (TextView) findViewById(R.id.trackingStatus);
@@ -150,9 +171,7 @@ public class MainActivity extends AppCompatActivity {
 
     public boolean alarmActive() {
         Intent intent = new Intent(getApplicationContext(), AlarmReceiver.class);
-        boolean alarmUp = ((PendingIntent.getBroadcast(this, AlarmReceiver.REQUEST_CODE, intent, PendingIntent.FLAG_NO_CREATE)) != null);
-        Log.i(TAG, String.valueOf(alarmUp));
-        return alarmUp;
+        return ((PendingIntent.getBroadcast(this, AlarmReceiver.REQUEST_CODE, intent, PendingIntent.FLAG_NO_CREATE)) != null);
     }
 
     public void updateStatus() {
@@ -163,9 +182,50 @@ public class MainActivity extends AppCompatActivity {
             trackingStatus.setText("Not tracking");
             trackingStatus.setTextColor(Color.RED);
         }
+
     }
 
-    private void hideKeyboard() {
+
+    public void checkUser(String name, OnCheckValidEndListener listener) {
+        checkedName = name;
+        checkValidSummoner check = new checkValidSummoner(listener);
+        check.execute();
+
+    }
+    public interface OnCheckValidEndListener {
+        void onCheckValidEnd(String checkedName);
+    }
+    private class checkValidSummoner extends AsyncTask<String, Void, Void> {
+
+        private final OnCheckValidEndListener listener;
+
+        checkValidSummoner(OnCheckValidEndListener listener) {
+            this.listener = listener;
+        }
+        @Override
+        protected void onPreExecute() {
+
+        }
+
+        @Override
+        protected Void doInBackground(String... strings) {
+            try {
+                checkedName = RiotAPI.getSummonerByName(checkedName).toString();
+            } catch (APIException e) {
+                checkedName = null;
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            listener.onCheckValidEnd(checkedName);
+
+        }
+    }
+
+
+    public void hideKeyboard() {
         // Check if no view has focus:
         View view = this.getCurrentFocus();
         if (view != null) {
@@ -173,6 +233,7 @@ public class MainActivity extends AppCompatActivity {
             inputManager.hideSoftInputFromWindow(view.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
         }
     }
+
 
 }
 
