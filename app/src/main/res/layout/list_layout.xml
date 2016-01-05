@@ -23,5 +23,7 @@
         android:layout_alignParentEnd="true"
         android:src="@drawable/close"
         android:layout_alignParentStart="false"
+        android:layout_alignParentLeft="false"
+
         android:layout_marginRight="10dp" />
 </RelativeLayout>

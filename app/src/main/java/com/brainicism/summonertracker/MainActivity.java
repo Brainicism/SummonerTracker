@@ -18,6 +18,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -37,6 +38,7 @@ public class MainActivity extends AppCompatActivity implements AddSummerDialogFr
     private static final String TAG = "MainActivity";
     public static ArrayList<String> summonerNames = new ArrayList<>();
     public static SummonerAdapter listAdapter;
+    LinearLayout trackingHeader;
     TextView trackingStatus;
     ListView trackingList;
     String checkedName;
@@ -54,6 +56,10 @@ public class MainActivity extends AppCompatActivity implements AddSummerDialogFr
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        trackingHeader = (LinearLayout) View.inflate(MainActivity.this, R.layout.header_layout, null);
+        trackingList = (ListView) findViewById(R.id.trackingList);
+        trackingList.addHeaderView(trackingHeader, null, false);
+
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
@@ -65,7 +71,6 @@ public class MainActivity extends AppCompatActivity implements AddSummerDialogFr
         summonerNames = loadArray(getBaseContext()); //loads tracked summoners from shared prefs
 
         trackingStatus = (TextView) findViewById(R.id.trackingStatus);
-        trackingList = (ListView) findViewById(R.id.trackingList);
         listAdapter = new SummonerAdapter(MainActivity.this, summonerNames); //set list adapter
         trackingList.setAdapter(listAdapter);
 
