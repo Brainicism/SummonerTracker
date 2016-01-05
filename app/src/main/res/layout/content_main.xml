@@ -26,15 +26,6 @@
                 android:focusable="true"
                 android:focusableInTouchMode="true" />
 
-            <TextView
-                android:id="@+id/textView"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentTop="true"
-                android:layout_centerHorizontal="true"
-                android:text="@string/app_name"
-                android:textAppearance="?android:attr/textAppearanceLarge" />
-
             <Button
                 android:id="@+id/start_service"
                 android:layout_width="fill_parent"
@@ -62,23 +53,6 @@
                 android:orientation="vertical"
                 android:paddingTop="10dp">
 
-                <EditText
-                    android:id="@+id/summonerBox1"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal" />
-
-                <EditText
-                    android:id="@+id/summonerBox2"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal" />
-
-                <EditText
-                    android:id="@+id/summonerBox3"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal" />
 
             </LinearLayout>
 

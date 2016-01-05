@@ -1,6 +1,7 @@
 package com.brainicism.summonertracker;
 
 import android.app.AlarmManager;
+import android.app.DialogFragment;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -19,6 +20,7 @@ import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.robrua.orianna.api.core.RiotAPI;
 import com.robrua.orianna.type.api.LoadPolicy;
@@ -28,19 +30,20 @@ import com.robrua.orianna.type.exception.APIException;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements AddSummerDialogFragment.NoticeDialogListener {
     public static final String apiKey = "YOUR API KEY HERE";
     private static final String TAG = "MainActivity";
-    ArrayList<String> summonerNames = new ArrayList<>();
-    TextView nameOne, nameTwo, nameThree;
+    public static ArrayList<String> summonerNames = new ArrayList<>();
+    public static SummonerAdapter listAdapter;
     TextView trackingStatus;
     ListView trackingList;
-    SummonerAdapter listAdapter;
     String checkedName;
 
+   public interface OnCheckValidEndListener {
+        void onCheckValidEnd(String checkedName);
+    }
     @Override
     protected void onRestart() {
         updateStatus();
@@ -52,68 +55,46 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
         RiotAPI.setLoadPolicy(LoadPolicy.UPFRONT); //set up API
         RiotAPI.setRateLimit(new RateLimit(3000, 10), new RateLimit(180000, 600));
         RiotAPI.setAPIKey(MainActivity.apiKey);
         RiotAPI.setRegion(Region.NA);
-        setSupportActionBar(toolbar);
+
+        summonerNames = loadArray(getBaseContext()); //loads tracked summoners from shared prefs
+
+        trackingStatus = (TextView) findViewById(R.id.trackingStatus);
+        trackingList = (ListView) findViewById(R.id.trackingList);
+        listAdapter = new SummonerAdapter(MainActivity.this, summonerNames); //set list adapter
+        trackingList.setAdapter(listAdapter);
+
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) { //will replace with adding summoners to track later
-                checkUser(nameOne.getText().toString(), new OnCheckValidEndListener() {
-                    @Override
-                    public void onCheckValidEnd(String checkedName) {
-                        if (checkedName == null) {
-                            Log.i(TAG, "Null");
-                        } else {
-                            Log.i(TAG, checkedName + " Not Null");
-                        }
-                    }
-                });
+            public void onClick(View view) { //opens dialog to add new summoner to tracking list
+                AddSummerDialogFragment dialog = new AddSummerDialogFragment();
+                dialog.show(getFragmentManager(), "track_dialog");
             }
         });
-
         findViewById(R.id.start_service).setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
-                summonerNames.clear();
-                summonerNames.add(nameOne.getText().toString()); //get inputs from text fields
-                summonerNames.add(nameTwo.getText().toString());
-                summonerNames.add(nameThree.getText().toString());
-                saveArray(summonerNames, getBaseContext()); //save array to shared prefs
-                List<String> outputs = loadArray(getBaseContext());
-                for (int i = 0; i < outputs.size(); i++) {
-                    Log.i(TAG, "Name: " + outputs.get(i));
-                }
-
-                scheduleAlarm();
+            public void onClick(View v) { //begin or restart track
+                scheduleAlarm(getApplicationContext());
                 Snackbar.make(v, "Tracking Begin", Snackbar.LENGTH_SHORT).show();
                 Log.i(TAG, "Tracking begin");
-                listAdapter = new SummonerAdapter(MainActivity.this, summonerNames);
-                trackingList.setAdapter(listAdapter);
                 updateStatus();
-
             }
         });
 
-        findViewById(R.id.stop_service).setOnClickListener(new View.OnClickListener() {
+        findViewById(R.id.stop_service).setOnClickListener(new View.OnClickListener() { //cease tracking
             @Override
             public void onClick(View v) {
-                cancelAlarm();
+                cancelAlarm(getApplicationContext());
                 Snackbar.make(v, "Tracking End", Snackbar.LENGTH_SHORT).show();
                 updateStatus();
-
             }
         });
-        trackingStatus = (TextView) findViewById(R.id.trackingStatus);
-        trackingList = (ListView) findViewById(R.id.trackingList);
-        nameOne = (TextView) findViewById(R.id.summonerBox1);
-        nameTwo = (TextView) findViewById(R.id.summonerBox2);
-        nameThree = (TextView) findViewById(R.id.summonerBox3);
-        nameOne.setText("terminator6736");
-        nameTwo.setText("sebi");
-        nameThree.setText("clg imaqtpie69");
         updateStatus();
     }
 
@@ -132,7 +113,7 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    public boolean saveArray(List<String> array, Context mContext) { //save array to sharedprefs
+    public static boolean saveArray(ArrayList<String> array, Context mContext) { //save array to sharedprefs
         SharedPreferences prefs = mContext.getSharedPreferences("summoner_names", 0);
         SharedPreferences.Editor editor = prefs.edit();
         Set<String> set = new HashSet<>();
@@ -141,27 +122,26 @@ public class MainActivity extends AppCompatActivity {
         return editor.commit();
     }
 
-    public List<String> loadArray(Context mContext) { //load array from sharedprefs
+    public ArrayList<String> loadArray(Context mContext) { //load array from sharedprefs
         SharedPreferences prefs = mContext.getSharedPreferences("summoner_names", 0);
         Set<String> setNames = prefs.getStringSet("summoner_names", null);
-        List<String> listNames = new ArrayList<>();
+        ArrayList<String> listNames = new ArrayList<>();
         listNames.addAll(setNames);
         return listNames;
     }
 
-    public void scheduleAlarm() {
-        Intent intent = new Intent(getApplicationContext(), AlarmReceiver.class);
+    public static void scheduleAlarm(Context context) { //schedule regular alarm to check summoner ingame/out of game
+        Intent intent = new Intent(context, AlarmReceiver.class);
         intent.putStringArrayListExtra("summName", summonerNames);
-        final PendingIntent pIntent = PendingIntent.getBroadcast(this, AlarmReceiver.REQUEST_CODE,
+        final PendingIntent pIntent = PendingIntent.getBroadcast(context, AlarmReceiver.REQUEST_CODE,
                 intent, PendingIntent.FLAG_UPDATE_CURRENT);
         long firstMillis = System.currentTimeMillis(); // alarm is set right away
-        AlarmManager alarm = (AlarmManager) this.getSystemService(Context.ALARM_SERVICE);
+        AlarmManager alarm = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         alarm.setRepeating(AlarmManager.RTC_WAKEUP, firstMillis,
                 AlarmManager.INTERVAL_FIFTEEN_MINUTES / 5, pIntent);
     }
-
-    public void cancelAlarm() {
-        Intent intent = new Intent(getApplicationContext(), AlarmReceiver.class);
+    public void cancelAlarm(Context context) { //cancel alarm
+        Intent intent = new Intent(context, AlarmReceiver.class);
         final PendingIntent pIntent = PendingIntent.getBroadcast(this, AlarmReceiver.REQUEST_CODE,
                 intent, PendingIntent.FLAG_UPDATE_CURRENT);
         AlarmManager alarm = (AlarmManager) this.getSystemService(Context.ALARM_SERVICE);
@@ -169,7 +149,7 @@ public class MainActivity extends AppCompatActivity {
         pIntent.cancel();
     }
 
-    public boolean alarmActive() {
+    public boolean alarmActive() { //check if alarm is active
         Intent intent = new Intent(getApplicationContext(), AlarmReceiver.class);
         return ((PendingIntent.getBroadcast(this, AlarmReceiver.REQUEST_CODE, intent, PendingIntent.FLAG_NO_CREATE)) != null);
     }
@@ -185,26 +165,19 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-
     public void checkUser(String name, OnCheckValidEndListener listener) {
         checkedName = name;
         checkValidSummoner check = new checkValidSummoner(listener);
         check.execute();
 
     }
-    public interface OnCheckValidEndListener {
-        void onCheckValidEnd(String checkedName);
-    }
     private class checkValidSummoner extends AsyncTask<String, Void, Void> {
-
         private final OnCheckValidEndListener listener;
-
         checkValidSummoner(OnCheckValidEndListener listener) {
             this.listener = listener;
         }
         @Override
         protected void onPreExecute() {
-
         }
 
         @Override
@@ -220,7 +193,6 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Void aVoid) {
             listener.onCheckValidEnd(checkedName);
-
         }
     }
 
@@ -234,6 +206,36 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    public void onDialogPositiveClick(DialogFragment dialog) { //adding summoner dialog
+        String user = ((TextView) dialog.getDialog().findViewById(R.id.username)).getText().toString();
+        checkUser(user, new OnCheckValidEndListener() {
+            @Override
+            public void onCheckValidEnd(String checkedName) {
+                if (checkedName == null) {
+                    Log.i(TAG, "Summoner does not exist");
+                    Toast.makeText(MainActivity.this, "Summoner does not exist", Toast.LENGTH_SHORT).show();
 
+                } else {
+                    Log.i(TAG, checkedName + " does exist");
+                    if (summonerNames.contains(checkedName)){
+                        Toast.makeText(MainActivity.this, checkedName + " is already being tracked", Toast.LENGTH_SHORT).show();
+                    }
+                    else {
+                        summonerNames.add(checkedName); //add summoner to list of trackers
+                        saveArray(summonerNames, getApplicationContext());
+                        Toast.makeText(MainActivity.this, checkedName + " has been added", Toast.LENGTH_SHORT).show();
+                        listAdapter.notifyDataSetChanged(); //update listview
+                        scheduleAlarm(getApplicationContext()); //re-set alarm
+                    }
+                }
+            }
+        });
+
+    }
+
+    @Override
+    public void onDialogNegativeClick(DialogFragment dialog) {
+    }
 }
 
