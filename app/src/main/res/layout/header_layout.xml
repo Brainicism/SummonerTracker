@@ -18,6 +18,7 @@
             android:layout_below="@+id/textView"
             android:layout_centerHorizontal="true"
             android:layout_marginTop="10dp"
+            android:textColor="#FFFFFF"
             android:text="Begin Tracking" />
 
         <Button
@@ -27,6 +28,7 @@
             android:layout_below="@+id/start_service"
             android:layout_centerHorizontal="true"
             android:layout_marginTop="10dp"
+            android:textColor="#FFFFFF"
             android:text="Cease Tracking" />
 
         <TextView

@@ -4,6 +4,7 @@ import android.app.AlarmManager;
 import android.app.DialogFragment;
 import android.app.PendingIntent;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
@@ -11,13 +12,17 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.ContextMenu;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -39,10 +44,12 @@ public class MainActivity extends AppCompatActivity implements AddSummerDialogFr
     public static ArrayList<String> summonerNames = new ArrayList<>();
     public static SummonerAdapter listAdapter;
     LinearLayout trackingHeader;
+    MenuItem toggle;
+    Menu menu;
     TextView trackingStatus;
-    ListView trackingList;
+    static ListView trackingList;
     String checkedName;
-
+    int position;
    public interface OnCheckValidEndListener {
         void onCheckValidEnd(String checkedName);
     }
@@ -73,6 +80,7 @@ public class MainActivity extends AppCompatActivity implements AddSummerDialogFr
         trackingStatus = (TextView) findViewById(R.id.trackingStatus);
         listAdapter = new SummonerAdapter(MainActivity.this, summonerNames); //set list adapter
         trackingList.setAdapter(listAdapter);
+        registerForContextMenu(trackingList);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -104,6 +112,82 @@ public class MainActivity extends AppCompatActivity implements AddSummerDialogFr
     }
 
     @Override
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+        super.onCreateContextMenu(menu, v, menuInfo);
+        MenuInflater inflater  = getMenuInflater();
+        inflater.inflate(R.menu.list_context_menu, menu);
+        this.menu = menu;
+        toggle = menu.findItem(R.id.postGameNotif);
+       // toggle.setTitle("ONCREATE TEXT CHANGE");
+        SharedPreferences prefs = getApplicationContext().getSharedPreferences("summoner_prefs", MODE_PRIVATE);
+        boolean postNotif = prefs.getBoolean(summonerNames.get(position),false);
+        if (postNotif){
+            toggle.setTitle("Disable post-game notifications");
+        }
+        else
+            toggle.setTitle("Enable post-game notifications");
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        return super.onPrepareOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
+        position = info.position-1;
+        switch (item.getItemId()){
+           case R.id.deleteSummoner: {
+               AlertDialog.Builder builder = new AlertDialog.Builder(this);
+               builder.setTitle("Delete Summoner");
+               builder.setMessage("Are you sure you want to remove this summoner from tracking" +
+                       "?");
+               builder.setPositiveButton("YES", new DialogInterface.OnClickListener() {
+                   public void onClick(DialogInterface dialog, int which) {
+                       Toast.makeText(getApplicationContext(), summonerNames.get(position), Toast.LENGTH_SHORT).show();
+                       summonerNames.remove(position);
+                       saveArray(MainActivity.summonerNames , getApplicationContext());
+                       listAdapter.notifyDataSetChanged();
+                       scheduleAlarm(getApplicationContext());
+                   }
+               });
+               builder.setNegativeButton("NO", new DialogInterface.OnClickListener() {
+                   @Override
+                   public void onClick(DialogInterface dialog, int which) {
+                       dialog.dismiss();
+                   }
+               });
+               AlertDialog alert = builder.create();
+               alert.show();
+               break;
+           }
+            case R.id.postGameNotif:{
+                invalidateOptionsMenu();
+                SharedPreferences prefs = getApplicationContext().getSharedPreferences("summoner_prefs", MODE_PRIVATE);
+                SharedPreferences.Editor editor =  getApplicationContext().getSharedPreferences("summoner_prefs", MODE_PRIVATE).edit();
+                boolean postNotif = prefs.getBoolean(summonerNames.get(position),false);
+                if (postNotif) {
+                    Log.i(TAG,"Disabled");
+                    editor.putBoolean(summonerNames.get(position), false);
+                    editor.commit();
+                    Toast.makeText(MainActivity.this, "Post-game notifications disabled", Toast.LENGTH_SHORT).show();
+
+                }
+                else {
+                    Log.i(TAG, "Enabled");
+                    editor.putBoolean(summonerNames.get(position), true);
+                    editor.commit();
+                    Toast.makeText(MainActivity.this, "Post-game notifications enabled", Toast.LENGTH_SHORT).show();
+
+                }
+                break;
+            }
+       }
+        return super.onContextItemSelected(item);
+    }
+
+    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
@@ -131,6 +215,7 @@ public class MainActivity extends AppCompatActivity implements AddSummerDialogFr
         SharedPreferences prefs = mContext.getSharedPreferences("summoner_names", 0);
         Set<String> setNames = prefs.getStringSet("summoner_names", null);
         ArrayList<String> listNames = new ArrayList<>();
+        if (setNames != null)
         listNames.addAll(setNames);
         return listNames;
     }
@@ -167,7 +252,6 @@ public class MainActivity extends AppCompatActivity implements AddSummerDialogFr
             trackingStatus.setText("Not tracking");
             trackingStatus.setTextColor(Color.RED);
         }
-
     }
 
     public void checkUser(String name, OnCheckValidEndListener listener) {
