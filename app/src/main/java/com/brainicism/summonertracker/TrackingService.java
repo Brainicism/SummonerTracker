@@ -9,7 +9,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.os.PowerManager;
-import android.preference.PreferenceManager;
 import android.support.v7.app.NotificationCompat;
 import android.util.Log;
 
@@ -18,7 +17,6 @@ import com.robrua.orianna.type.api.LoadPolicy;
 import com.robrua.orianna.type.api.RateLimit;
 import com.robrua.orianna.type.core.common.Region;
 import com.robrua.orianna.type.core.currentgame.CurrentGame;
-import com.robrua.orianna.type.core.match.Match;
 import com.robrua.orianna.type.core.summoner.Summoner;
 import com.robrua.orianna.type.exception.APIException;
 
@@ -45,7 +43,7 @@ public class TrackingService extends IntentService {
         RiotAPI.setRateLimit(new RateLimit(3000, 10), new RateLimit(180000, 600));
         RiotAPI.setAPIKey(MainActivity.apiKey);
         RiotAPI.setRegion(Region.NA);
-        prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()); //get shared preferences
+        prefs = getApplicationContext().getSharedPreferences("summoner_prefs", MODE_PRIVATE);
         editor = prefs.edit();
         mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
@@ -93,9 +91,17 @@ public class TrackingService extends IntentService {
                 long lastRunID = prefs.getLong(summoner.getName() + "_lastRunID", 0);
                 mNotificationManager.cancel(notifID); //cancel current notification if game is over
                 if (lastRunID != 0) { //if they were in a game, but no longer in game
+                    boolean postNotif = prefs.getBoolean(summoner.getName() + "_postNotif", false);
+                    Log.i(TAG, summoner.getName() + " preference: " + postNotif);
                     String queueType = prefs.getString(summoner.getName() + "_lastRunQueueType", "");
                     String champ = prefs.getString(summoner.getName() + "_lastRunChamp", "");
-                    buildNotificationFinishGame(summoner.getName(), lastRunID, queueType, champ);
+                    if (postNotif) { //only show post game if selected preference is selected for summoner
+                        buildNotificationFinishGame(summoner.getName(), lastRunID, queueType, champ);
+                        Log.i(TAG, summoner.getName() + " wanted post notifications");
+                    }
+                    else{
+                        Log.i(TAG, summoner.getName() + " did not want post notifications");
+                    }
                 }
             }
             if (game != null) { //updates previous current game data

@@ -119,8 +119,10 @@ public class MainActivity extends AppCompatActivity implements AddSummerDialogFr
         this.menu = menu;
         toggle = menu.findItem(R.id.postGameNotif);
        // toggle.setTitle("ONCREATE TEXT CHANGE");
+        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) menuInfo;
+        int listPosition = info.position -1;
         SharedPreferences prefs = getApplicationContext().getSharedPreferences("summoner_prefs", MODE_PRIVATE);
-        boolean postNotif = prefs.getBoolean(summonerNames.get(position),false);
+        boolean postNotif = prefs.getBoolean(summonerNames.get(listPosition) + "_postNotif",false);
         if (postNotif){
             toggle.setTitle("Disable post-game notifications");
         }
@@ -166,19 +168,19 @@ public class MainActivity extends AppCompatActivity implements AddSummerDialogFr
                 invalidateOptionsMenu();
                 SharedPreferences prefs = getApplicationContext().getSharedPreferences("summoner_prefs", MODE_PRIVATE);
                 SharedPreferences.Editor editor =  getApplicationContext().getSharedPreferences("summoner_prefs", MODE_PRIVATE).edit();
-                boolean postNotif = prefs.getBoolean(summonerNames.get(position),false);
+                boolean postNotif = prefs.getBoolean(summonerNames.get(position)+"_postNotif",false);
                 if (postNotif) {
                     Log.i(TAG,"Disabled");
-                    editor.putBoolean(summonerNames.get(position), false);
+                    editor.putBoolean(summonerNames.get(position)+"_postNotif", false);
                     editor.commit();
-                    Toast.makeText(MainActivity.this, "Post-game notifications disabled", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "Post-game notifications disabled for " + summonerNames.get(position), Toast.LENGTH_SHORT).show();
 
                 }
                 else {
                     Log.i(TAG, "Enabled");
-                    editor.putBoolean(summonerNames.get(position), true);
+                    editor.putBoolean(summonerNames.get(position) + "_postNotif", true);
                     editor.commit();
-                    Toast.makeText(MainActivity.this, "Post-game notifications enabled", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "Post-game notifications enabled for " + summonerNames.get(position), Toast.LENGTH_SHORT).show();
 
                 }
                 break;
