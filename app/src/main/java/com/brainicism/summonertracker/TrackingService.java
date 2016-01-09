@@ -91,7 +91,7 @@ public class TrackingService extends IntentService {
                 long lastRunID = prefs.getLong(summoner.getName() + "_lastRunID", 0);
                 mNotificationManager.cancel(notifID); //cancel current notification if game is over
                 if (lastRunID != 0) { //if they were in a game, but no longer in game
-                    boolean postNotif = prefs.getBoolean(summoner.getName() + "_postNotif", false);
+                    boolean postNotif = prefs.getBoolean(summoner.getName() + "_postNotif", true);
                     Log.i(TAG, summoner.getName() + " preference: " + postNotif);
                     String queueType = prefs.getString(summoner.getName() + "_lastRunQueueType", "");
                     String champ = prefs.getString(summoner.getName() + "_lastRunChamp", "");

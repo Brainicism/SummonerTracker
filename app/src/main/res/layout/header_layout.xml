@@ -11,6 +11,17 @@
         android:id="@+id/trackingHeader">
 
 
+        <TextView
+            android:id="@+id/trackingStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:fontFamily="sans-serif-medium"
+            android:text="Large Text"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp" />
+
         <Button
             android:id="@+id/start_service"
             android:layout_width="match_parent"
@@ -29,17 +40,15 @@
             android:layout_centerHorizontal="true"
             android:layout_marginTop="10dp"
             android:textColor="#FFFFFF"
-            android:text="Cease Tracking" />
+            android:text="Cease Tracking"
+            android:clickable="false"
+            android:layout_marginBottom="15dp" />
 
-        <TextView
-            android:id="@+id/trackingStatus"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:text="Large Text"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:paddingTop="10dp"
-            android:paddingBottom="10dp" />
-
+        <View
+            android:id="@+id/divider"
+            android:layout_width="fill_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="5dp"
+            android:background="#90909090" />
     </LinearLayout>
 </LinearLayout>

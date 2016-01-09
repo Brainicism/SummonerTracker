@@ -1,6 +1,8 @@
 package com.brainicism.summonertracker;
 
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,7 +13,7 @@ import android.widget.TextView;
 import java.util.ArrayList;
 
 public class SummonerAdapter extends ArrayAdapter<String> {
-
+TextView postNotifText;
     public SummonerAdapter(Context context, ArrayList<String> summoners) {
         super(context, 0, summoners);
     }
@@ -24,17 +26,19 @@ public class SummonerAdapter extends ArrayAdapter<String> {
         final TextView summonerNameText;
         final String summonerName;
         final ImageView cancel;
-
+        postNotifText = (TextView) convertView.findViewById(R.id.postNotifText);
+        SharedPreferences prefs = getContext().getSharedPreferences("summoner_prefs", Context.MODE_PRIVATE);
         summonerName = getItem(position);
         summonerNameText = (TextView) convertView.findViewById(R.id.summonerName);
         summonerNameText.setText(summonerName);
-        cancel = (ImageView) convertView.findViewById(R.id.cancel);
-        cancel.setOnClickListener(new View.OnClickListener() { //removing a tracked summoner
-            @Override
-            public void onClick(View v) {
-                MainActivity.trackingList.showContextMenu();
-            }
-        });
+        boolean postNotif = prefs.getBoolean(summonerName+"_postNotif",false);
+        Log.i("SummonerAdapter", "hello is " + postNotif );
+        if (postNotif){
+            postNotifText.setText("Post-game notifications: ON");
+        }
+        else{
+            postNotifText.setText("Post-game notifications: OFF");
+        }
 
         return convertView;
     }
