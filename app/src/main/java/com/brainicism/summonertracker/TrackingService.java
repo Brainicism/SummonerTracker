@@ -59,6 +59,7 @@ public class TrackingService extends IntentService {
     @Override
     protected void onHandleIntent(Intent intent) {
         ArrayList<String> summonerName = intent.getStringArrayListExtra("summName"); //retrieve array list of summoner namers
+
         for (int i = 0; i < summonerName.size(); i++) { //loop through each summoner name
             try {
                 summoner = RiotAPI.getSummonerByName(summonerName.get(i));
@@ -68,7 +69,8 @@ public class TrackingService extends IntentService {
                 game = null;
                 summoner = null;
             }
-
+            boolean postNotif = MainActivity.getPostNotifPref(getApplicationContext(),summoner.getName());
+            Log.i(TAG, summoner.getName()+"_postNotif "  + " preference: " + postNotif);
             if (game != null) { //if there is a current game
                 long prevGameID = prefs.getLong(summoner.getName() + "_prevGame", 0); //retrieve previous game from sharedprefs
                 List<com.robrua.orianna.type.core.currentgame.Participant> listParticipant = game.getParticipants();
@@ -91,8 +93,7 @@ public class TrackingService extends IntentService {
                 long lastRunID = prefs.getLong(summoner.getName() + "_lastRunID", 0);
                 mNotificationManager.cancel(notifID); //cancel current notification if game is over
                 if (lastRunID != 0) { //if they were in a game, but no longer in game
-                    boolean postNotif = prefs.getBoolean(summoner.getName() + "_postNotif", true);
-                    Log.i(TAG, summoner.getName() + " preference: " + postNotif);
+
                     String queueType = prefs.getString(summoner.getName() + "_lastRunQueueType", "");
                     String champ = prefs.getString(summoner.getName() + "_lastRunChamp", "");
                     if (postNotif) { //only show post game if selected preference is selected for summoner
@@ -114,8 +115,9 @@ public class TrackingService extends IntentService {
                 editor.commit();
             }
         }
-        wl.release(); //release wakelock
-
+        if (wl.isHeld()) { //if wakelock is currently being held
+            wl.release();
+        }
     }
 
 

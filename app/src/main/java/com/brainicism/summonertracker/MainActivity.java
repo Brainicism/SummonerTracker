@@ -51,9 +51,11 @@ public class MainActivity extends AppCompatActivity implements AddSummerDialogFr
     static ListView trackingList;
     String checkedName;
     int position;
-   public interface OnCheckValidEndListener {
+
+    public interface OnCheckValidEndListener {
         void onCheckValidEnd(String checkedName);
     }
+
     @Override
     protected void onRestart() {
         updateStatus();
@@ -80,6 +82,7 @@ public class MainActivity extends AppCompatActivity implements AddSummerDialogFr
 
         trackingStatus = (TextView) findViewById(R.id.trackingStatus);
         listAdapter = new SummonerAdapter(MainActivity.this, summonerNames); //set list adapter
+        Collections.sort(summonerNames, String.CASE_INSENSITIVE_ORDER);
         trackingList.setAdapter(listAdapter);
         registerForContextMenu(trackingList);
 
@@ -115,19 +118,18 @@ public class MainActivity extends AppCompatActivity implements AddSummerDialogFr
     @Override
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
         super.onCreateContextMenu(menu, v, menuInfo);
-        MenuInflater inflater  = getMenuInflater();
+        MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.list_context_menu, menu);
         this.menu = menu;
         toggle = menu.findItem(R.id.postGameNotif);
         AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) menuInfo;
-        int listPosition = info.position -1;
+        int listPosition = info.position - 1;
         SharedPreferences prefs = getApplicationContext().getSharedPreferences("summoner_prefs", MODE_PRIVATE);
-        boolean postNotif = prefs.getBoolean(summonerNames.get(listPosition) + "_postNotif",false);
+        boolean postNotif = prefs.getBoolean(summonerNames.get(listPosition) + "_postNotif", false);
         Log.i(TAG, "onCreateContextMenu  " + summonerNames.get(listPosition) + "_postNotif" + ": " + postNotif);
-        if (postNotif){
+        if (postNotif) {
             toggle.setTitle("Disable post-game notifications");
-        }
-        else
+        } else
             toggle.setTitle("Enable post-game notifications");
     }
 
@@ -139,39 +141,39 @@ public class MainActivity extends AppCompatActivity implements AddSummerDialogFr
     @Override
     public boolean onContextItemSelected(MenuItem item) {
         AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
-        position = info.position-1;
-        switch (item.getItemId()){
-           case R.id.deleteSummoner: {
-               AlertDialog.Builder builder = new AlertDialog.Builder(this);
-               builder.setTitle("Delete Summoner");
-               builder.setMessage("Are you sure you want to remove this summoner from tracking?");
-               builder.setPositiveButton("YES", new DialogInterface.OnClickListener() {
-                   public void onClick(DialogInterface dialog, int which) {
-                       Toast.makeText(getApplicationContext(), summonerNames.get(position), Toast.LENGTH_SHORT).show();
-                       summonerNames.remove(position);
-                       saveArray(MainActivity.summonerNames, getApplicationContext());
-                       Collections.sort(summonerNames, String.CASE_INSENSITIVE_ORDER);
-                       listAdapter.notifyDataSetChanged();
-                       if (alarmActive()) { //if alarm active, re-set alarm
-                           scheduleAlarm(getApplicationContext());
-                       }
-                   }
-               });
-               builder.setNegativeButton("NO", new DialogInterface.OnClickListener() {
-                   @Override
-                   public void onClick(DialogInterface dialog, int which) {
-                       dialog.dismiss();
-                   }
-               });
-               AlertDialog alert = builder.create();
-               alert.show();
-               break;
-           }
-            case R.id.postGameNotif:{
+        position = info.position - 1;
+        switch (item.getItemId()) {
+            case R.id.deleteSummoner: {
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setTitle("Delete Summoner");
+                builder.setMessage("Are you sure you want to remove this summoner from tracking?");
+                builder.setPositiveButton("YES", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        Toast.makeText(getApplicationContext(), summonerNames.get(position), Toast.LENGTH_SHORT).show();
+                        summonerNames.remove(position);
+                        saveArray(MainActivity.summonerNames, getApplicationContext());
+                        Collections.sort(summonerNames, String.CASE_INSENSITIVE_ORDER);
+                        listAdapter.notifyDataSetChanged();
+                        if (alarmActive()) { //if alarm active, re-set alarm
+                            scheduleAlarm(getApplicationContext());
+                        }
+                    }
+                });
+                builder.setNegativeButton("NO", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                });
+                AlertDialog alert = builder.create();
+                alert.show();
+                break;
+            }
+            case R.id.postGameNotif: {
                 invalidateOptionsMenu();
                 SharedPreferences prefs = getApplicationContext().getSharedPreferences("summoner_prefs", MODE_PRIVATE);
-                SharedPreferences.Editor editor =  getApplicationContext().getSharedPreferences("summoner_prefs", MODE_PRIVATE).edit();
-                boolean postNotif = prefs.getBoolean(summonerNames.get(position)+"_postNotif",false);
+                SharedPreferences.Editor editor = getApplicationContext().getSharedPreferences("summoner_prefs", MODE_PRIVATE).edit();
+                boolean postNotif = prefs.getBoolean(summonerNames.get(position) + "_postNotif", false);
                 if (postNotif) {
                     Log.i(TAG, "Disabled");
                     editor.putBoolean(summonerNames.get(position) + "_postNotif", false);
@@ -180,8 +182,7 @@ public class MainActivity extends AppCompatActivity implements AddSummerDialogFr
 
                     Toast.makeText(MainActivity.this, "Post-game notifications disabled for " + summonerNames.get(position), Toast.LENGTH_SHORT).show();
 
-                }
-                else {
+                } else {
                     Log.i(TAG, "Enabled");
                     editor.putBoolean(summonerNames.get(position) + "_postNotif", true);
                     editor.commit();
@@ -189,12 +190,12 @@ public class MainActivity extends AppCompatActivity implements AddSummerDialogFr
                     Toast.makeText(MainActivity.this, "Post-game notifications enabled for " + summonerNames.get(position), Toast.LENGTH_SHORT).show();
 
                 }
-                Log.i(TAG, "onContextItemSelected  "+ summonerNames.get(position)+ "_postNotif" + ": " + prefs.getBoolean(summonerNames.get(position)+"_postNotif",false));
+                Log.i(TAG, "onContextItemSelected  " + summonerNames.get(position) + "_postNotif" + ": " + prefs.getBoolean(summonerNames.get(position) + "_postNotif", false));
 
                 break;
             }
 
-       }
+        }
         return super.onContextItemSelected(item);
     }
 
@@ -214,6 +215,7 @@ public class MainActivity extends AppCompatActivity implements AddSummerDialogFr
     }
 
     public static boolean saveArray(ArrayList<String> array, Context mContext) { //save array to sharedprefs
+        Collections.sort(array, String.CASE_INSENSITIVE_ORDER);
         SharedPreferences prefs = mContext.getSharedPreferences("summoner_names", 0);
         SharedPreferences.Editor editor = prefs.edit();
         Set<String> set = new HashSet<>();
@@ -227,7 +229,8 @@ public class MainActivity extends AppCompatActivity implements AddSummerDialogFr
         Set<String> setNames = prefs.getStringSet("summoner_names", null);
         ArrayList<String> listNames = new ArrayList<>();
         if (setNames != null)
-        listNames.addAll(setNames);
+            listNames.addAll(setNames);
+        Collections.sort(listNames, String.CASE_INSENSITIVE_ORDER);
         return listNames;
     }
 
@@ -241,6 +244,7 @@ public class MainActivity extends AppCompatActivity implements AddSummerDialogFr
         alarm.setRepeating(AlarmManager.RTC_WAKEUP, firstMillis,
                 AlarmManager.INTERVAL_FIFTEEN_MINUTES / 5, pIntent);
     }
+
     public void cancelAlarm(Context context) { //cancel alarm
         Intent intent = new Intent(context, AlarmReceiver.class);
         final PendingIntent pIntent = PendingIntent.getBroadcast(this, AlarmReceiver.REQUEST_CODE,
@@ -272,11 +276,13 @@ public class MainActivity extends AppCompatActivity implements AddSummerDialogFr
         check.execute();
 
     }
+
     private class checkValidSummoner extends AsyncTask<String, Void, Void> {
         private final OnCheckValidEndListener listener;
         checkValidSummoner(OnCheckValidEndListener listener) {
             this.listener = listener;
         }
+
         @Override
         protected void onPreExecute() {
         }
@@ -307,6 +313,11 @@ public class MainActivity extends AppCompatActivity implements AddSummerDialogFr
         }
     }
 
+    public static boolean getPostNotifPref(Context context, String summonerName) {
+        SharedPreferences prefs = context.getSharedPreferences("summoner_prefs", MODE_PRIVATE);
+        return prefs.getBoolean(summonerName + "_postNotif", false);
+    }
+
     @Override
     public void onDialogPositiveClick(DialogFragment dialog) { //adding summoner dialog
         String user = ((TextView) dialog.getDialog().findViewById(R.id.username)).getText().toString();
@@ -319,10 +330,9 @@ public class MainActivity extends AppCompatActivity implements AddSummerDialogFr
 
                 } else {
                     Log.i(TAG, checkedName + " does exist");
-                    if (summonerNames.contains(checkedName)){
+                    if (summonerNames.contains(checkedName)) {
                         Toast.makeText(MainActivity.this, checkedName + " is already being tracked", Toast.LENGTH_SHORT).show();
-                    }
-                    else {
+                    } else {
                         summonerNames.add(checkedName); //add summoner to list of trackers
                         saveArray(summonerNames, getApplicationContext());
                         Toast.makeText(MainActivity.this, checkedName + " has been added", Toast.LENGTH_SHORT).show();

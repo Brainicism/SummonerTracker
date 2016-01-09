@@ -32,7 +32,6 @@ TextView postNotifText;
         summonerNameText = (TextView) convertView.findViewById(R.id.summonerName);
         summonerNameText.setText(summonerName);
         boolean postNotif = prefs.getBoolean(summonerName+"_postNotif",false);
-        Log.i("SummonerAdapter", "hello is " + postNotif );
         if (postNotif){
             postNotifText.setText("Post-game notifications: ON");
         }
